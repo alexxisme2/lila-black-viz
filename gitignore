@@ -1,0 +1,17 @@
+# Cache — regenerated automatically on first run
+.cache_processed.parquet
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
+Thumbs.db
