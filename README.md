@@ -4,7 +4,7 @@
 > Built for the LILA Games Level Design team.
 
 ## Live Demo
-**[https://lila-black-viz.streamlit.app](https://lila-black-viz.streamlit.app)**
+**[[https://lila-black-viz.streamlit.app](https://lila-black-viz-mx4ydnmxnkgbqbb9xx6d4i.streamlit.app/)]**
 
 ---
 
