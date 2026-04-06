@@ -1,76 +1,78 @@
 # LILA BLACK — Level Designer Dashboard
 
-A web tool for exploring player behavior on LILA BLACK maps.
+> Internal tool for analyzing player behavior on LILA BLACK maps.  
+> Built for the LILA Games Level Design team.
 
-## Project Structure
+## Live Demo
+**[https://lila-black-viz.streamlit.app](https://lila-black-viz.streamlit.app)**
 
+---
+
+## What It Does
+
+A web-based visualization tool that turns raw match telemetry into actionable level design insights.
+
+| Tab | What you get |
+|---|---|
+| **Data Health** | Automated data quality report — fixes applied, anomalies flagged |
+| **Insights** | 7 pre-computed game design observations with evidence and actions |
+| **Overview** | Match-level stats, engagement breakdown, storm/loot timing |
+| **Match Replay** | Animated playback of any match — per-player color-coded paths, clustered events |
+| **Player Profile** | Aggregate heatmap of a player's favorite zones + single-match path view |
+| **Heatmaps** | Normalized event density (% of total), hotspot bubbles, auto-generated zone insights |
+
+---
+
+## Local Setup
+
+```bash
+git clone https://github.com/alexxisme2/lila-black-viz
+cd lila-black-viz
+
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+pip install -r requirements.txt
 ```
-lila-viz/
-├── app.py                  ← Main Streamlit app (run this)
-├── data_loader.py          ← Parquet loading + preprocessing
-├── coordinate_utils.py     ← World → minimap pixel conversion
-├── requirements.txt
-├── player_data/            ← PUT YOUR DATA HERE
+
+Place your data files:
+```
+lila-black-viz/
+├── player_data/
 │   ├── February_10/
 │   ├── February_11/
 │   ├── February_12/
 │   ├── February_13/
 │   └── February_14/
-├── minimaps/               ← PUT MINIMAP IMAGES HERE
-│   ├── AmbroseValley_Minimap.png
-│   ├── GrandRift_Minimap.png
-│   └── Lockdown_Minimap.jpg
-└── README.md
+└── minimaps/
+    ├── AmbroseValley_Minimap.png
+    ├── GrandRift_Minimap.png
+    └── Lockdown_Minimap.jpg
 ```
 
-## Local Setup
-
 ```bash
-# 1. Create a virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate        # Mac/Linux
-venv\Scripts\activate           # Windows
-
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Place data files
-#    - Unzip player_data.zip → put the player_data/ folder here
-#    - Put minimap images in minimaps/ folder
-
-# 4. Run
 streamlit run app.py
 ```
 
-App opens at http://localhost:8501
+First load: ~25s (processes 1,243 parquet files, writes local cache).  
+Subsequent loads: ~1s (reads `.cache_processed.parquet`).
 
-## Deploy to Streamlit Cloud (free)
+---
 
-1. Push this repo to GitHub (include requirements.txt, exclude player_data/)
-2. Since player_data is large, you have two options:
-   - **Option A (simple):** Commit the data files to the repo (fine for ~5MB)
-   - **Option B (better):** Host data on S3/GCS and load via URL in data_loader.py
-3. Go to https://share.streamlit.io → Connect your repo → Deploy
+## Tech Stack
 
-## What Each File Does
+- **Streamlit** — UI framework
+- **PyArrow + Pandas** — parquet loading and data processing
+- **Plotly** — interactive maps, charts, and native animation
+- **Pillow** — minimap image rendering
 
-| File | Purpose |
-|------|---------|
-| `app.py` | Streamlit UI — sidebar filters, 3 tabs (Journeys, Heatmaps, Stats) |
-| `data_loader.py` | Loads all 1243 parquet files, decodes bytes, computes pixel coords, caches result |
-| `coordinate_utils.py` | Converts world (x,z) → minimap pixel → Plotly coordinates |
+---
 
-## Key Design Decisions
+## Key Technical Notes
 
-**Coordinate system:**  
-`pixel_y = (1 - v) * 1024` (image coords, 0 = top)  
-`plot_y  = 1024 - pixel_y` (Plotly coords, 0 = bottom)  
-This ensures scatter points align with the minimap background image.
+- `ts` column in parquet is **unix seconds**, not milliseconds (README was incorrect — verified via median match duration = 6.4 min)
+- 1,420 duplicate rows dropped at load time (cross-day ingestion artifact)
+- Bot parquet files missing for 91% of matches — BotKill events inferred from human-side logs only
+- Coordinate mapping: world `(x,z)` → UV `(0-1)` → pixel `(1024×1024)` → Plotly coords (y-axis flipped twice)
 
-**Performance:**  
-- Pixel coords pre-computed once at load time, stored in dataframe
-- Player paths use Plotly's None-separator trick (all paths = 1 trace)
-- `@st.cache_data` means data loads once per session (~30s first time)
-
-**Paths only on single match:**  
-Showing paths across 796 matches is visually useless. Heatmaps handle the multi-match case.
+See `ARCHITECTURE.md` for full technical documentation.  
+See `INSIGHTS.md` for game design analysis.
